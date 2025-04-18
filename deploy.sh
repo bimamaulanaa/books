@@ -7,12 +7,22 @@ sudo apt-get upgrade -y
 # Install required packages
 sudo apt-get install -y python3-pip python3-venv nginx
 
+# Remove existing virtual environment if it exists
+rm -rf venv
+
 # Create and activate virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
+# Upgrade pip
+pip install --upgrade pip
+
 # Install Python dependencies
 pip install -r requirements.txt
+
+# Verify gunicorn installation
+which gunicorn
+gunicorn --version
 
 # Configure Nginx
 sudo tee /etc/nginx/sites-available/aitawfiq << EOF
@@ -44,7 +54,8 @@ After=network.target
 User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/books
-Environment="PATH=/home/ubuntu/books/venv/bin"
+Environment="PATH=/home/ubuntu/books/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/home/ubuntu/books"
 ExecStart=/home/ubuntu/books/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 app:app
 
 [Install]
