@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aitawfiq - Comparative Tafsir Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: 70vh;
+            overflow-y: auto;
+            padding: 20px;
+            margin-bottom: 80px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .ai-message {
+            background-color: #f5f5f5;
+            margin-right: 20%;
+        }
+        #chat-input {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+        }
+        .loading-spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 0.25em solid #f3f3f3;
+            border-top: 0.25em solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .clear-chat-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+        }
+        .clear-chat-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Aitawfiq - Comparative Tafsir Assistant</h1>
+        <div class="chat-container" id="chat-container">
+            <!-- Messages will be added here dynamically -->
+        </div>
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p class="mt-2">Aitawfiq is thinking...</p>
+        </div>
+        <div id="chat-input">
+            <div class="input-group">
+                <input type="text" class="form-control" id="user-input" placeholder="Ask about tafsir or Qur'anic sciences...">
+                <button class="btn btn-primary" id="send-button">Send</button>
+                <button class="btn clear-chat-btn" id="clear-chat">Clear Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const clearButton = document.getElementById('clear-chat');
+            const loadingIndicator = document.getElementById('loading');
+
+            function addMessage(content, isUser) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+                messageDiv.textContent = content;
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function showLoading() {
+                loadingIndicator.style.display = 'block';
+                sendButton.disabled = true;
+                userInput.disabled = true;
+            }
+
+            function hideLoading() {
+                loadingIndicator.style.display = 'none';
+                sendButton.disabled = false;
+                userInput.disabled = false;
+            }
+
+            async function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                addMessage(message, true);
+                userInput.value = '';
+                showLoading();
+
+                try {
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: message })
+                    });
+
+                    const data = await response.json();
+                    if (data.error) {
+                        addMessage('Error: ' + data.error, false);
+                    } else {
+                        addMessage(data.response, false);
+                    }
+                } catch (error) {
+                    addMessage('Error: Could not connect to the server', false);
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            async function clearChat() {
+                try {
+                    const response = await fetch('/clear-chat', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        chatContainer.innerHTML = '';
+                    }
+                } catch (error) {
+                    console.error('Error clearing chat:', error);
+                }
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+            clearButton.addEventListener('click', clearChat);
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
