@@ -53,5 +53,5 @@ EOF
 
 # Reload systemd and start the service
 sudo systemctl daemon-reload
-sudo systemctl start aitawfiq
+sudo systemctl restart aitawfiq
 sudo systemctl enable aitawfiq 

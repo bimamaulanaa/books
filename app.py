@@ -14,6 +14,16 @@ app.secret_key = os.getenv("SECRET_KEY") or os.urandom(24)  # Secret key for ses
 # Configure OpenAI API
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Initialize OpenAI client based on version
+try:
+    # Try v1 style initialization
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    OPENAI_VERSION = 1
+except TypeError:
+    # Fall back to v0 style initialization
+    client = openai
+    OPENAI_VERSION = 0
+
 @app.route('/')
 def index():
     """Render the main page."""
@@ -89,13 +99,18 @@ def chat():
         messages.extend(conversation_history)
         
         # Call the OpenAI API with the full conversation context
-        response = openai.chat.completions.create(
-            model="gpt-4",
-            messages=messages
-        )
-        
-        # Extract the AI's response
-        ai_response = response.choices[0].message.content
+        if OPENAI_VERSION == 1:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=messages
+            )
+            ai_response = response.choices[0].message.content
+        else:
+            response = client.ChatCompletion.create(
+                model="gpt-4",
+                messages=messages
+            )
+            ai_response = response.choices[0].message.content
         
         # Add the AI response to the conversation history
         session['messages'].append({"role": "assistant", "content": ai_response})
